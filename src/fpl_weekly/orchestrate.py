@@ -18,7 +18,7 @@ try:
         data_dir = "/dbfs/tmp/fpl_test/"
     else:
         data_dir = cwd.parent.parent.parent.parent
-    data_dir = ensure_dir(data_dir.joinpath(f"fpl_dump_{ts}").joinpath("raw"))
+    data_dir = ensure_dir(Path(data_dir).joinpath(f"fpl_dump_{ts}").joinpath("raw"))
 except:
     data_dir = ensure_dir(Path(data_dir) if data_dir else Path(f"./fpl_dump_{ts}/raw"))
 
