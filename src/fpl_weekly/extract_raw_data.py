@@ -27,4 +27,4 @@ def main(out: Optional[str] = None) -> None:
     
     return out_dir
 	
-main()
+#main()
