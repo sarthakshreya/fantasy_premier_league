@@ -15,7 +15,7 @@ is_remote_job = True
 
 try:
     if is_remote_job:
-        path = "/dbfs/tmp/fpl_test/"
+        data_dir = "/dbfs/tmp/fpl_test/"
     else:
         data_dir = cwd.parent.parent.parent.parent
     data_dir = ensure_dir(data_dir.joinpath(f"fpl_dump_{ts}").joinpath("raw"))
