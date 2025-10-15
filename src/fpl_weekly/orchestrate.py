@@ -14,7 +14,7 @@ ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
 is_remote_job = True
 
 try:
-    if is_remote_job = True:
+    if is_remote_job:
         path = "dbfs:/mnt/mydata"
     else:
         data_dir = cwd.parent.parent.parent.parent
