@@ -39,7 +39,7 @@ def ensure_dir(p: Path) -> Path:
     return p
     
 def define_bootstrap_static_path(input_path: Path) -> Path:
-    bootstrap_path = input_path / "bootstrap_static.json"
+    bootstrap_path = input_path / "bootstrap_static_data.json"
     return bootstrap_path
     
 def define_fixture_path(input_path: Path) -> Path:
