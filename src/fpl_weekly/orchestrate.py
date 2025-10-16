@@ -15,7 +15,7 @@ is_remote_job = True
 
 try:
     if is_remote_job:
-        data_dir = "file:/Workspace/Users/sarthak-shreya/"
+        data_dir = "/databricks/driver/"
         dbutils.fs.mkdirs(data_dir + f"fpl_dump_{ts}/raw")
     else:
         data_dir = cwd.parent.parent.parent.parent 
