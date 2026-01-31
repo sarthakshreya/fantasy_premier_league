@@ -24,6 +24,14 @@ import pandas as pd
 
 POS_MAP = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
 
+# Columns to keep in team_last3_next3.csv (reduced set)
+TEAM_TABLE_COLS = [
+    "team_id", "team", "blend_score_z", "form_score_z", "fixture_score_z",
+    "last3_points", "upcoming_next3_count", "next3_avg_difficulty",
+    "next3_opponents", "next3_home_away", "data_timestamp",
+    "form_score", "fixture_score", "blend_score",
+]
+
 def load_inputs(in_dir: Path):
     """Load from transformed folder: players.csv, teams.csv, and fixtures (CSV or JSON)."""
     in_dir = Path(in_dir)
@@ -182,10 +190,11 @@ def enrich_players(players_df, teams_df, diff_threshold, temp_threshold):
 
 def select_uniform_columns(df, data_ts_str):
     cols = [
-        "player_id","web_name","team","team_short","position",
-        "now_cost_m","selected_by_percent","form","points_per_game",
-        "last_gw_points","price_change_gw","price_change_season","ownership_label",
-        "availability","shortlist_rank","is_best_pick","data_timestamp"
+        "player_id", "web_name", "team", "team_short", "position",
+        "blend_score_z", "form_score_z", "fixture_score_z",
+        "now_cost_m", "selected_by_percent", "form", "points_per_game",
+        "last_gw_points", "price_change_gw", "price_change_season", "ownership_label",
+        "availability", "shortlist_rank", "is_best_pick", "data_timestamp",
     ]
     df = df.copy()
     df["data_timestamp"] = data_ts_str
@@ -226,6 +235,9 @@ def shortlist_per_team(players_df, team_rank_df, top_n_teams, per_team, data_ts_
     res = pd.concat(picks) if picks else pd.DataFrame(columns=cand.columns)
     # rank per team block for readability
     res["shortlist_rank"] = res.groupby("team").cumcount() + 1
+    # add team score columns (blend_score_z, form_score_z, fixture_score_z) from team_rank_df
+    team_scores = team_rank_df[["team", "blend_score_z", "form_score_z", "fixture_score_z"]].drop_duplicates("team")
+    res = res.merge(team_scores, on="team", how="left")
     res = select_uniform_columns(res, data_ts_str)
     return res
 
@@ -239,12 +251,14 @@ def shortlist_topK(players_df, team_rank_df, top_k, data_ts_str):
     df["comp_score"] = df["ppg"]*1.2 + df["frm"]*0.8 + df["team_blend"].fillna(0)*0.3
     df.loc[df["status"].isin(["i","s"]), "comp_score"] *= 0.5
     base = df[(df["minutes"] >= 0) & (df["status"].isin(["a","d","n"]))].copy()
-    #ranked = base.sort_values(["position","comp_score","ppg","frm"], ascending=[True, False, False, False]).copy()
     ranked = base.sort_values(["comp_score"], ascending=[False]).copy()
     ranked["is_best_pick"] = False
     # global rank within position groups
     ranked["shortlist_rank"] = ranked.groupby("position").cumcount() + 1
     ranked = ranked.head(top_k)
+    # add team score columns (blend_score_z, form_score_z, fixture_score_z) from team_rank_df
+    team_scores = team_rank_df[["team", "blend_score_z", "form_score_z", "fixture_score_z"]].drop_duplicates("team")
+    ranked = ranked.merge(team_scores, on="team", how="left")
     ranked = select_uniform_columns(ranked, data_ts_str)
     # Re-order for readability: GK, DEF, MID, FWD then shortlist_rank
     pos_order = {"GK":0,"DEF":1,"MID":2,"FWD":3}
@@ -263,9 +277,9 @@ def main(in_dir: str, out_dir: str, top_n_teams: int, per_team: int, top_k_playe
     team_table = compute_team_form(fixtures, teams, data_ts_str)
     players_en = enrich_players(players, teams, diff_threshold, temp_threshold)
 
-    # Write team table
+    # Write team table (reduced columns only)
     team_path = out_p / "team_last3_next3.csv"
-    team_table.to_csv(team_path, index=False)
+    team_table[TEAM_TABLE_COLS].to_csv(team_path, index=False)
 
     # Shortlists
     per_team_df = shortlist_per_team(players_en, team_table, top_n_teams, per_team, data_ts_str)
