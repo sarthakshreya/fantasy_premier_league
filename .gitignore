@@ -1,0 +1,12 @@
+# Generated output
+fpl_dump/
+fpl_analysis/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store

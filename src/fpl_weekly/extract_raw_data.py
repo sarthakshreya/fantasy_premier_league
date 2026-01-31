@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from datetime import datetime, timezone
 from typing import List, Optional
 
 import requests
@@ -8,8 +7,7 @@ import pandas as pd
 from util import *
 
 def main(out: Optional[str] = None) -> None:
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
-    out_dir = ensure_dir(Path(out) if out else Path(f"./fpl_dump_{ts}/raw"))
+    out_dir = ensure_dir(Path(out) if out else Path("./fpl_dump/raw"))
 
     print(f"Saving to: {out_dir.resolve()}")
 

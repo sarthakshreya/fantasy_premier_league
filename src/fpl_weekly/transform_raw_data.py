@@ -3,20 +3,17 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional
 
-import requests
 import pandas as pd
 from util import *
-
-from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
 
 COLS_PLAYERS = [
     "id", "first_name", "second_name", "web_name", "team", "element_type",
     "now_cost", "selected_by_percent", "status", "form", "points_per_game",
     "minutes", "goals_scored", "assists", "clean_sheets", "goals_conceded",
     "yellow_cards", "red_cards", "expected_goals", "expected_assists", "expected_goal_involvements",
-    "news","news_added",
-    "chance_of_playing_this_round","chance_of_playing_next_round"
+    "news", "news_added",
+    "chance_of_playing_this_round", "chance_of_playing_next_round",
+    "event_points", "cost_change_event", "cost_change_start",
 ]
 
 COLS_FIXTURES =  [
@@ -26,15 +23,16 @@ COLS_FIXTURES =  [
    "team_h_difficulty", "team_a_difficulty", "pulse_id"
 ]
 
-def spark_session() -> SparkSession:
-    
+def spark_session():
+    from pyspark.sql import SparkSession
+
     # Only create SparkSession if it doesn't already exist (like in Databricks)
     try:
         spark  # check if spark already exists (Databricks provides it)
     except NameError:
         spark = SparkSession.builder.appName("FPL Analysis").getOrCreate()
-    
-    return spark_session
+
+    return spark
 
 def to_csv_players(in_dir: Path, out_dir: Path) -> None:
     
@@ -63,12 +61,13 @@ def to_csv_players(in_dir: Path, out_dir: Path) -> None:
     events.to_csv(out_dir / "events.csv", index=False)
     
 def to_table_players(in_dir: Path) -> None:
-    
+    from pyspark.sql import functions as F
+
     spark = spark_session()
-    
+
     bootstrap_file = define_bootstrap_static_path(in_dir)
-    bootstrap_df = spark.read.json(bootstrap_file)
-    
+    bootstrap_df = spark.read.json(str(bootstrap_file))
+
     ts = F.current_timestamp()
     
     teams_df = bootstrap_df.select(F.explode("teams").alias("t")).withColumn("ingest_ts", ts)
@@ -104,12 +103,13 @@ def to_csv_fixtures(in_dir: Path, out_dir: Path) -> None:
     fixtures.to_csv(out_dir / "fixtures.csv", index=False)
     
 def to_table_fixtures(in_dir: Path) -> None:
-    
+    from pyspark.sql import functions as F
+
     spark = spark_session()
-    
+
     fixture_file = define_fixture_path(in_dir)
-    
-    fixture_df = spark.read.json(fixture_file)
+
+    fixture_df = spark.read.json(str(fixture_file))
     fixture_df = fixture_df.filter(F.col("_corrupt_record").isNull())
     fixture_df = fixture_df.select(COLS_FIXTURES)
     fixture_df = fixture_df.withColumn("ingest_ts", F.current_timestamp())
